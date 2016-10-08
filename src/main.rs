@@ -23,9 +23,9 @@ gfx_defines! {
     }
 
     constant Locals {
-        model: UniformMat4 = "u_Model",
         proj: UniformMat4 = "u_Proj",
         view: UniformMat4 = "u_View",
+        model: UniformMat4 = "u_Model",
     }
 
     pipeline pipe {
@@ -133,8 +133,7 @@ pub fn main() {
         prev = cur;
         while accum > TICK_TIME {
             accum -= TICK_TIME;
-            // TODO: figure out why the transformations are at different scales
-            sprite.data.model[3][0] += 0.001;
+            sprite.data.model[3][0] += 0.1;
             view[3][1] += 0.1;
         }
 
