@@ -10,6 +10,7 @@ gfx_defines! {
     vertex Vertex {
         pos: [f32; 2] = "a_Pos",
         color: [f32; 3] = "a_Color",
+        uv: [f32; 2] = "a_Uv",
     }
 
     constant Locals {
@@ -20,22 +21,38 @@ gfx_defines! {
 
     pipeline pipe {
         vbuf: gfx::VertexBuffer<Vertex> = (),
+        texture: gfx::TextureSampler<[f32; 4]> = "t_Texture",
         locals: gfx::ConstantBuffer<Locals> = "Locals",
         out: gfx::RenderTarget<ColorFormat> = "Target0",
     }
 }
 
 const TRIANGLE: [Vertex; 4] = [
-    Vertex { pos: [0.0, 0.0], color: [1.0, 1.0, 1.0] },
-    Vertex { pos: [10.0, 0.0], color: [1.0, 1.0, 1.0] },
-    Vertex { pos: [0.0, 10.0], color: [1.0, 1.0, 1.0] },
-    Vertex { pos: [10.0, 10.0], color: [1.0, 1.0, 1.0] },
+    Vertex { pos: [0.0, 0.0], color: [1.0, 1.0, 1.0], uv: [0.0, 0.0] },
+    Vertex { pos: [1.0, 0.0], color: [1.0, 1.0, 1.0], uv: [1.0, 0.0] },
+    Vertex { pos: [0.0, 1.0], color: [1.0, 1.0, 1.0], uv: [0.0, 1.0] },
+    Vertex { pos: [1.0, 1.0], color: [1.0, 1.0, 1.0], uv: [1.0, 1.0] },
 ];
 
 const TRIANGLE_INDICES: [u16; 6] = [
     0, 1, 3,
     0, 3, 2,
 ];
+
+fn load_texture<F, R, P>(factory: &mut F, path: P)
+    -> Result<gfx::handle::ShaderResourceView<R, [f32; 4]>, String>
+    where F: gfx::Factory<R>,
+          R: gfx::Resources,
+          P: AsRef<::std::path::Path> {
+    use gfx::tex as t;
+
+    let img = ::image::open(path).unwrap().to_rgba();
+    let (width, height) = img.dimensions();
+    let kind = t::Kind::D2(width as u16, height as u16, t::AaMode::Single);
+    let (_texture, resource) = factory.create_texture_const_u8::<gfx::format::Rgba8>(kind, &[&img]).unwrap();
+
+    Ok(resource)
+}
 
 pub struct Sprite<R: gfx::Resources> {
     pso: gfx::PipelineState<R, pipe::Meta>,
@@ -44,21 +61,29 @@ pub struct Sprite<R: gfx::Resources> {
     pub position: cgmath::Vector3<f32>,
     pub scale: f32,
     pub rotation: cgmath::Basis3<f32>,
+    pub rotation_center: cgmath::Vector3<f32>,
+    pub width: f32,
+    pub height: f32,
 }
 
 impl<R: gfx::Resources> Sprite<R> {
-    pub fn new<F>(factory: &mut F,
-              target: gfx::handle::RenderTargetView<R, (gfx::format::R8_G8_B8_A8, gfx::format::Unorm)>) -> Self
+    pub fn new<F>(
+        factory: &mut F,
+        target: gfx::handle::RenderTargetView<R, ColorFormat>,
+        width: f32,
+        height: f32) -> Self
         where F: gfx::Factory<R> {
+        let texture = load_texture(factory, ::std::path::Path::new("assets/textures/tankBlue_outline.png")).unwrap();
+        let sampler = factory.create_sampler_linear();
         let pso = factory.create_pipeline_simple(
             include_bytes!("shader/sprite_150.glslv"),
             include_bytes!("shader/sprite_150.glslf"),
             pipe::new(),
         ).unwrap();
-
         let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(&TRIANGLE, &TRIANGLE_INDICES as &[u16]);
         let data = pipe::Data {
             vbuf: vertex_buffer,
+            texture: (texture, sampler),
             locals: factory.create_constant_buffer(1),
             out: target,
         };
@@ -70,6 +95,9 @@ impl<R: gfx::Resources> Sprite<R> {
             position: cgmath::vec3(0.0, 0.0, 0.0),
             scale: 1.0,
             rotation: cgmath::Basis3::one(),
+            rotation_center: cgmath::vec3(0.5, 0.5, 0.0),
+            width: width,
+            height: height,
         }
     }
 
@@ -78,11 +106,18 @@ impl<R: gfx::Resources> Sprite<R> {
                  proj: UniformMat4,
                  view: UniformMat4)
         where C: gfx::CommandBuffer<R> {
-        let model: cgmath::Matrix4<f32> = cgmath::Decomposed {
-            scale: self.scale,
+        let translate_to_center = cgmath::Matrix4::from_translation(-self.rotation_center);
+        let rotation: cgmath::Matrix4<f32> = cgmath::Decomposed {
+            scale: 1.0,
             rot: self.rotation,
-            disp: self.position,
+            disp: cgmath::vec3(0.0, 0.0, 0.0),
         }.into();
+        let translate_from_center = cgmath::Matrix4::from_translation(self.rotation_center);
+        let scale = cgmath::Matrix4::from_nonuniform_scale(self.scale * self.width, self.scale * self.height, 1.0);
+        let translate_to_position = cgmath::Matrix4::from_translation(self.position);
+
+        let model = translate_to_position * scale * translate_from_center * rotation * translate_to_center;
+
         let locals = Locals {
             proj: proj,
             view: view,
