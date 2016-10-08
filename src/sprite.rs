@@ -1,4 +1,4 @@
-use cgmath::{self, SquareMatrix};
+use cgmath::{self, Rotation, SquareMatrix};
 use gfx;
 use gfx::traits::FactoryExt;
 
@@ -21,7 +21,6 @@ gfx_defines! {
     pipeline pipe {
         vbuf: gfx::VertexBuffer<Vertex> = (),
         locals: gfx::ConstantBuffer<Locals> = "Locals",
-        model: gfx::Global<UniformMat4> = "u_Model",
         out: gfx::RenderTarget<ColorFormat> = "Target0",
     }
 }
@@ -40,8 +39,11 @@ const TRIANGLE_INDICES: [u16; 6] = [
 
 pub struct Sprite<R: gfx::Resources> {
     pso: gfx::PipelineState<R, pipe::Meta>,
-    pub data: pipe::Data<R>,
+    data: pipe::Data<R>,
     slice: gfx::Slice<R>,
+    pub position: cgmath::Vector3<f32>,
+    pub scale: f32,
+    pub rotation: cgmath::Basis3<f32>,
 }
 
 impl<R: gfx::Resources> Sprite<R> {
@@ -58,7 +60,6 @@ impl<R: gfx::Resources> Sprite<R> {
         let data = pipe::Data {
             vbuf: vertex_buffer,
             locals: factory.create_constant_buffer(1),
-            model: cgmath::Matrix4::identity().into(),
             out: target,
         };
 
@@ -66,6 +67,9 @@ impl<R: gfx::Resources> Sprite<R> {
             pso: pso,
             data: data,
             slice: slice,
+            position: cgmath::vec3(0.0, 0.0, 0.0),
+            scale: 1.0,
+            rotation: cgmath::Basis3::one(),
         }
     }
 
@@ -74,10 +78,15 @@ impl<R: gfx::Resources> Sprite<R> {
                  proj: UniformMat4,
                  view: UniformMat4)
         where C: gfx::CommandBuffer<R> {
+        let model: cgmath::Matrix4<f32> = cgmath::Decomposed {
+            scale: self.scale,
+            rot: self.rotation,
+            disp: self.position,
+        }.into();
         let locals = Locals {
             proj: proj,
             view: view,
-            model: self.data.model,
+            model: model.into(),
         };
 
         encoder.update_buffer(&self.data.locals, &[locals], 0).unwrap();

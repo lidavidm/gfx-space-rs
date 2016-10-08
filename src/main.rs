@@ -10,7 +10,7 @@ pub mod types;
 
 use types::*;
 
-use cgmath::SquareMatrix;
+use cgmath::{Rotation3, SquareMatrix};
 use gfx::Device;
 
 const TICK_TIME: u64 = 20 * 1000000;
@@ -34,6 +34,7 @@ pub fn main() {
 
     let mut prev = time::precise_time_ns();
     let mut accum = 0;
+    let mut angle = 0.0;
     'outer: loop {
         for event in window.poll_events() {
             match event {
@@ -47,7 +48,9 @@ pub fn main() {
         prev = cur;
         while accum > TICK_TIME {
             accum -= TICK_TIME;
-            sprite.data.model[3][0] += 0.1;
+            sprite.position.x += 0.1;
+            sprite2.rotation = cgmath::Basis3::from_angle_z(cgmath::Rad { s: angle });
+            angle += std::f32::consts::PI / 10.0;
             view[3][1] += 0.1;
         }
 
