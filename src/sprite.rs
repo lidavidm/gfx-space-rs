@@ -39,8 +39,8 @@ const TRIANGLE_INDICES: [u16; 6] = [
     0, 3, 2,
 ];
 
-fn load_texture<F, R, P>(factory: &mut F, path: P)
-    -> Result<gfx::handle::ShaderResourceView<R, [f32; 4]>, String>
+pub fn load_texture<F, R, P>(factory: &mut F, path: P)
+    -> Result<Texture<R>, String>
     where F: gfx::Factory<R>,
           R: gfx::Resources,
           P: AsRef<::std::path::Path> {
@@ -70,16 +70,18 @@ impl<R: gfx::Resources> Sprite<R> {
     pub fn new<F>(
         factory: &mut F,
         target: gfx::handle::RenderTargetView<R, ColorFormat>,
+        texture: Texture<R>,
         width: f32,
         height: f32) -> Self
         where F: gfx::Factory<R> {
-        let texture = load_texture(factory, ::std::path::Path::new("assets/textures/tankBlue_outline.png")).unwrap();
         let sampler = factory.create_sampler_linear();
+        // TODO: can pso be cloned/shared?
         let pso = factory.create_pipeline_simple(
             include_bytes!("shader/sprite_150.glslv"),
             include_bytes!("shader/sprite_150.glslf"),
             pipe::new(),
         ).unwrap();
+        // TODO: clone from existing buffer/slice where possible
         let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(&TRIANGLE, &TRIANGLE_INDICES as &[u16]);
         let data = pipe::Data {
             vbuf: vertex_buffer,
@@ -106,6 +108,7 @@ impl<R: gfx::Resources> Sprite<R> {
                  proj: UniformMat4,
                  view: UniformMat4)
         where C: gfx::CommandBuffer<R> {
+        // TODO: cache recomputation of model matrix where possible
         let translate_to_center = cgmath::Matrix4::from_translation(-self.rotation_center);
         let rotation: cgmath::Matrix4<f32> = cgmath::Decomposed {
             scale: 1.0,
