@@ -54,8 +54,47 @@ pub fn load_texture<F, R, P>(factory: &mut F, path: P)
     Ok(resource)
 }
 
-pub struct Sprite<R: gfx::Resources> {
+pub struct SpriteFactory<R: gfx::Resources> {
+    sampler: gfx::handle::Sampler<R>,
     pso: gfx::PipelineState<R, pipe::Meta>,
+    vbuf: gfx::handle::Buffer<R, Vertex>,
+    slice: gfx::Slice<R>,
+}
+
+impl<R> SpriteFactory<R>
+    where R: gfx::Resources {
+    pub fn new<F>(factory: &mut F) -> SpriteFactory<R>
+        where F: gfx::Factory<R> {
+        let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(
+            &TRIANGLE, &TRIANGLE_INDICES as &[u16]);
+        SpriteFactory {
+            sampler: factory.create_sampler_linear(),
+            pso: factory.create_pipeline_simple(
+                include_bytes!("shader/sprite_150.glslv"),
+                include_bytes!("shader/sprite_150.glslf"),
+                pipe::new()).unwrap(),
+            vbuf: vertex_buffer,
+            slice: slice,
+        }
+    }
+
+    pub fn create<F>(
+        &self,
+        factory: &mut F,
+        target: gfx::handle::RenderTargetView<R, ColorFormat>,
+        texture: Texture<R>,
+        width: f32, height: f32) -> Sprite<R>
+        where F: gfx::Factory<R> {
+        Sprite::new(
+            factory, &self.pso,
+            self.vbuf.clone(), self.slice.clone(),
+            self.sampler.clone(), target, texture,
+            width, height)
+    }
+}
+
+pub struct Sprite<'a, R: gfx::Resources> {
+    pso: &'a gfx::PipelineState<R, pipe::Meta>,
     data: pipe::Data<R>,
     slice: gfx::Slice<R>,
     pub position: cgmath::Vector3<f32>,
@@ -66,25 +105,20 @@ pub struct Sprite<R: gfx::Resources> {
     pub height: f32,
 }
 
-impl<R: gfx::Resources> Sprite<R> {
+impl<'a, R: gfx::Resources> Sprite<'a, R> {
     pub fn new<F>(
         factory: &mut F,
+        pso: &'a gfx::PipelineState<R, pipe::Meta>,
+        vbuf: gfx::handle::Buffer<R, Vertex>,
+        slice: gfx::Slice<R>,
+        sampler: gfx::handle::Sampler<R>,
         target: gfx::handle::RenderTargetView<R, ColorFormat>,
         texture: Texture<R>,
         width: f32,
-        height: f32) -> Self
+        height: f32) -> Sprite<'a, R>
         where F: gfx::Factory<R> {
-        let sampler = factory.create_sampler_linear();
-        // TODO: can pso be cloned/shared?
-        let pso = factory.create_pipeline_simple(
-            include_bytes!("shader/sprite_150.glslv"),
-            include_bytes!("shader/sprite_150.glslf"),
-            pipe::new(),
-        ).unwrap();
-        // TODO: clone from existing buffer/slice where possible
-        let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(&TRIANGLE, &TRIANGLE_INDICES as &[u16]);
         let data = pipe::Data {
-            vbuf: vertex_buffer,
+            vbuf: vbuf,
             texture: (texture, sampler),
             locals: factory.create_constant_buffer(1),
             out: target,

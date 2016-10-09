@@ -30,9 +30,10 @@ pub fn main() {
     let proj = cgmath::ortho(0.0, 128.0, 0.0, 72.0, 0.0, 1.0).into();
     let mut view: UniformMat4 = cgmath::Matrix4::identity().into();
 
+    let sprite_factory = sprite::SpriteFactory::new(&mut factory);
     let texture = sprite::load_texture(&mut factory, std::path::Path::new("assets/textures/tankBlue_outline.png")).unwrap();
-    let mut sprite = sprite::Sprite::new(&mut factory, main_color.clone(), texture.clone(), 16.0, 16.0);
-    let mut sprite2 = sprite::Sprite::new(&mut factory, main_color.clone(), texture.clone(), 16.0, 16.0);
+    let mut sprite = sprite_factory.create(&mut factory, main_color.clone(), texture.clone(), 16.0, 16.0);
+    let mut sprite2 = sprite_factory.create(&mut factory, main_color.clone(), texture.clone(), 16.0, 16.0);
     sprite.scale = 0.5;
 
     let mut prev = time::precise_time_ns();
