@@ -131,7 +131,7 @@ impl<'a, R: gfx::Resources> Sprite<'a, R> {
             position: cgmath::vec3(0.0, 0.0, 0.0),
             scale: 1.0,
             rotation: cgmath::Basis3::one(),
-            rotation_center: cgmath::vec3(0.5, 0.5, 0.0),
+            rotation_center: cgmath::vec3(0.0, 0.0, 0.0),
             width: width,
             height: height,
         }
@@ -153,7 +153,7 @@ impl<'a, R: gfx::Resources> Sprite<'a, R> {
         let scale = cgmath::Matrix4::from_nonuniform_scale(self.scale * self.width, self.scale * self.height, 1.0);
         let translate_to_position = cgmath::Matrix4::from_translation(self.position);
 
-        let model = translate_to_position * scale * translate_from_center * rotation * translate_to_center;
+        let model = translate_to_position * translate_from_center * rotation * translate_to_center * scale;
 
         let locals = Locals {
             proj: proj,
