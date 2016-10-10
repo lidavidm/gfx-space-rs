@@ -58,7 +58,7 @@ pub fn main() {
                     let my = WINDOW_HEIGHT as i32 - my;
                     let x = (mx as f32 / WINDOW_WIDTH as f32) * WORLD_WIDTH - view[3][0];
                     let y = (my as f32 / WINDOW_HEIGHT as f32) * WORLD_HEIGHT - view[3][1];
-                    player.mouse_moved(mx, my as i32, x, y);
+                    input.mouse_moved(mx, my as i32, x, y);
                 }
                 glutin::Event::KeyboardInput(state, code, vcode) => {
                     input.key_pressed(state, code, vcode);
