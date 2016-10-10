@@ -19,64 +19,49 @@ use gfx::Device;
 const TICK_TIME: u64 = 20 * 1000000;
 const BG_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
-struct Input {
-    forward: bool,
-    backward: bool,
-    left: bool,
-    right: bool,
-}
+const WINDOW_WIDTH: u32 = 1280;
+const WINDOW_HEIGHT: u32 = 720;
+
+const WORLD_WIDTH: f32 = 640.0;
+const WORLD_HEIGHT: f32 = 360.0;
 
 pub fn main() {
     let builder = glutin::WindowBuilder::new()
         .with_title("Test".to_string())
-        .with_dimensions(1280, 720)
+        .with_dimensions(WINDOW_WIDTH, WINDOW_HEIGHT)
         .with_vsync();
 
     let (window, mut device, mut factory, main_color, main_depth) =
         gfx_window_glutin::init::<ColorFormat, DepthFormat>(builder);
     let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
 
-    let proj = cgmath::ortho(0.0, 128.0, 0.0, 72.0, 0.0, 1.0).into();
+    let proj = cgmath::ortho(0.0, WORLD_WIDTH, 0.0, WORLD_HEIGHT, 0.0, 1.0).into();
     let mut view: UniformMat4 = cgmath::Matrix4::identity().into();
 
     let sprite_factory = sprite::SpriteFactory::new(&mut factory);
     let texture = sprite::load_texture(&mut factory, std::path::Path::new("assets/textures/tankBlue_outline.png")).unwrap();
     let barrel_texture = sprite::load_texture(&mut factory, std::path::Path::new("assets/textures/barrelBlue_outline.png")).unwrap();
-    let sprite = sprite_factory.create(&mut factory, main_color.clone(), texture.clone(), 16.0, 16.0);
-    let barrel = sprite_factory.create(&mut factory, main_color.clone(), barrel_texture.clone(), 2.4, 5.8);
+    let sprite = sprite_factory.create(&mut factory, main_color.clone(), texture.clone(), 32.0, 32.0);
+    let barrel = sprite_factory.create(&mut factory, main_color.clone(), barrel_texture.clone(), 12.0, 27.0);
 
     let mut player = player::Player::new(sprite, barrel);
 
-    let inputs = Input { forward: false, backward: false, left: false, right: false };
+    let mut input = input::Input::new();
 
     let mut prev = time::precise_time_ns();
     let mut accum = 0;
-    let mut x = 0.0;
-    let mut y = 0.0;
-    let center_x = 64.0;
-    let center_y = 36.0;
     'outer: loop {
         for event in window.poll_events() {
             match event {
                 glutin::Event::Closed => break 'outer,
                 glutin::Event::MouseMoved(mx, my) => {
-                    let my = 720 - my;
-                    x = (mx as f32 / 1280.0) * 128.0 - view[3][0];
-                    y = (my as f32 / 720.0) * 72.0 - view[3][1];
-                    player.mouse_moved(mx, my, x, y);
-                    // let cx = center_x;
-                    // let cy = center_y;
-                    // let angle = f32::atan2(y - cy, x - cx) - std::f32::consts::PI / 2.0;
-                    // barrel.rotation = cgmath::Basis3::from_angle_z(cgmath::Rad { s: angle });
+                    let my = WINDOW_HEIGHT as i32 - my;
+                    let x = (mx as f32 / WINDOW_WIDTH as f32) * WORLD_WIDTH - view[3][0];
+                    let y = (my as f32 / WINDOW_HEIGHT as f32) * WORLD_HEIGHT - view[3][1];
+                    player.mouse_moved(mx, my as i32, x, y);
                 }
-                glutin::Event::KeyboardInput(glutin::ElementState::Pressed, code, _) => {
-                    match code {
-                        25 => view[3][1] -= 1.0,
-                        39 => view[3][1] += 1.0,
-                        38 => view[3][0] += 1.0,
-                        40 => view[3][0] -= 1.0,
-                        _ => {},
-                    }
+                glutin::Event::KeyboardInput(state, code, vcode) => {
+                    input.key_pressed(state, code, vcode);
                 }
                 _ => {},
             }
@@ -87,6 +72,7 @@ pub fn main() {
         prev = cur;
         while accum > TICK_TIME {
             accum -= TICK_TIME;
+            player.update(&input);
         }
 
         encoder.clear(&main_color, BG_COLOR);
