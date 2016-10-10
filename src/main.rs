@@ -6,6 +6,7 @@ extern crate glutin;
 extern crate image;
 extern crate time;
 
+pub mod input;
 pub mod sprite;
 pub mod types;
 pub mod player;
