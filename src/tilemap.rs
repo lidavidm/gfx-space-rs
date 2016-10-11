@@ -80,23 +80,33 @@ impl<R> Tilemap<R>
             let mut slice = Vec::new();
             let mut y = 0.0;
             let mut offset: u16 = 0;
+            let num_tiles_x: u32 = 17;
+            let num_tiles_y: u32 = 12;
+            let tile_world_size = 32.0;
+            let tile_tex_width = 1.0 / num_tiles_x as f32;
+            let tile_tex_height = 1.0 / num_tiles_y as f32;
             for row in layer.tiles.iter().rev() {
                 let mut x = 0.0;
                 for tile in row {
-                    mesh.push(Vertex { pos: [x, y], color: [1.0, 1.0, 1.0], uv: [0.0, 0.0] });
-                    mesh.push(Vertex { pos: [x + 32.0, y], color: [1.0, 1.0, 1.0], uv: [1.0 / 17.0, 0.0] });
-                    mesh.push(Vertex { pos: [x, y + 32.0], color: [1.0, 1.0, 1.0], uv: [0.0, 1.0 / 12.0] });
-                    mesh.push(Vertex { pos: [x + 32.0, y + 32.0], color: [1.0, 1.0, 1.0], uv: [1.0 / 17.0, 1.0 / 12.0] });
+                    let tile = tile - 1;
+                    let row_num = tile / num_tiles_x;
+                    let col_num = tile - num_tiles_x * row_num;
+                    let u = col_num as f32 * tile_tex_width;
+                    let v = row_num as f32 * tile_tex_height;
+                    mesh.push(Vertex { pos: [x, y], color: [1.0, 1.0, 1.0], uv: [u, v + tile_tex_height] });
+                    mesh.push(Vertex { pos: [x + tile_world_size, y], color: [1.0, 1.0, 1.0], uv: [u + tile_tex_width, v + tile_tex_height] });
+                    mesh.push(Vertex { pos: [x, y + tile_world_size], color: [1.0, 1.0, 1.0], uv: [u, v] });
+                    mesh.push(Vertex { pos: [x + tile_world_size, y + tile_world_size], color: [1.0, 1.0, 1.0], uv: [u + tile_tex_width, v] });
                     slice.push(offset);
                     slice.push(offset + 1);
                     slice.push(offset + 3);
                     slice.push(offset);
                     slice.push(offset + 3);
                     slice.push(offset + 2);
-                    x += 32.0;
+                    x += tile_world_size;
                     offset += 4;
                 }
-                y += 32.0;
+                y += tile_world_size;
             }
 
             let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(&mesh, slice.as_slice());
