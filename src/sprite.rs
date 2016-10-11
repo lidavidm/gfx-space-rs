@@ -28,10 +28,10 @@ gfx_defines! {
 }
 
 const TRIANGLE: [Vertex; 4] = [
-    Vertex { pos: [0.0, 0.0], color: [1.0, 1.0, 1.0], uv: [0.0, 0.0] },
-    Vertex { pos: [1.0, 0.0], color: [1.0, 1.0, 1.0], uv: [1.0, 0.0] },
-    Vertex { pos: [0.0, 1.0], color: [1.0, 1.0, 1.0], uv: [0.0, 1.0] },
-    Vertex { pos: [1.0, 1.0], color: [1.0, 1.0, 1.0], uv: [1.0, 1.0] },
+    Vertex { pos: [0.0, 0.0], color: [1.0, 1.0, 1.0], uv: [0.0, 1.0] },
+    Vertex { pos: [1.0, 0.0], color: [1.0, 1.0, 1.0], uv: [1.0, 1.0] },
+    Vertex { pos: [0.0, 1.0], color: [1.0, 1.0, 1.0], uv: [0.0, 0.0] },
+    Vertex { pos: [1.0, 1.0], color: [1.0, 1.0, 1.0], uv: [1.0, 0.0] },
 ];
 
 const TRIANGLE_INDICES: [u16; 6] = [
