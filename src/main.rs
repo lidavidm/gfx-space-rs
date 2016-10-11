@@ -22,8 +22,8 @@ const BG_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 const WINDOW_WIDTH: u32 = 1280;
 const WINDOW_HEIGHT: u32 = 720;
 
-const WORLD_WIDTH: f32 = 640.0;
-const WORLD_HEIGHT: f32 = 360.0;
+const WORLD_WIDTH: f32 = 1280.0;
+const WORLD_HEIGHT: f32 = 720.0;
 
 pub fn main() {
     let builder = glutin::WindowBuilder::new()
@@ -73,6 +73,11 @@ pub fn main() {
         while accum > TICK_TIME {
             accum -= TICK_TIME;
             player.update(&input);
+            if input.action {
+                let (x, y) = player.position();
+                view[3][0] = -x + WORLD_WIDTH / 2.0 - 16.0;
+                view[3][1] = -y + WORLD_HEIGHT / 2.0 - 16.0;
+            }
         }
 
         encoder.clear(&main_color, BG_COLOR);

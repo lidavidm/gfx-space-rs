@@ -36,6 +36,10 @@ impl<'a, R> Player<'a, R>
         }
     }
 
+    pub fn position(&self) -> (f32, f32) {
+        (self.sprite.position.x, self.sprite.position.y)
+    }
+
     pub fn update(&mut self, input: &Input) {
         if input.forward || input.backward {
             if input.forward {
@@ -60,10 +64,10 @@ impl<'a, R> Player<'a, R>
         self.velocity = f32::max(self.velocity, -2.0);
 
         if input.left {
-            self.angular_velocity = 0.01;
+            self.angular_velocity = 0.05;
         }
         else if input.right {
-            self.angular_velocity = -0.01;
+            self.angular_velocity = -0.05;
         }
         else {
             self.angular_velocity = 0.0;

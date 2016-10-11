@@ -5,6 +5,7 @@ pub struct Input {
     pub backward: bool,
     pub left: bool,
     pub right: bool,
+    pub action: bool,
     // Mouse coordinates
     pub win_x: i32,
     pub win_y: i32,
@@ -19,6 +20,7 @@ impl Input {
             backward: false,
             left: false,
             right: false,
+            action: false,
             win_x: 0,
             win_y: 0,
             world_x: 0.0,
@@ -35,6 +37,7 @@ impl Input {
             39 => self.backward = state == glutin::ElementState::Pressed,
             38 => self.left = state == glutin::ElementState::Pressed,
             40 => self.right = state == glutin::ElementState::Pressed,
+            65 => self.action = state == glutin::ElementState::Pressed,
             _ => {},
         }
     }
