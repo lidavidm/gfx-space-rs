@@ -88,23 +88,25 @@ impl<R> Tilemap<R>
             for row in layer.tiles.iter().rev() {
                 let mut x = 0.0;
                 for tile in row {
-                    let tile = tile - 1;
-                    let row_num = tile / num_tiles_x;
-                    let col_num = tile - num_tiles_x * row_num;
-                    let u = col_num as f32 * tile_tex_width;
-                    let v = row_num as f32 * tile_tex_height;
-                    mesh.push(Vertex { pos: [x, y], color: [1.0, 1.0, 1.0], uv: [u, v + tile_tex_height] });
-                    mesh.push(Vertex { pos: [x + tile_world_size, y], color: [1.0, 1.0, 1.0], uv: [u + tile_tex_width, v + tile_tex_height] });
-                    mesh.push(Vertex { pos: [x, y + tile_world_size], color: [1.0, 1.0, 1.0], uv: [u, v] });
-                    mesh.push(Vertex { pos: [x + tile_world_size, y + tile_world_size], color: [1.0, 1.0, 1.0], uv: [u + tile_tex_width, v] });
-                    slice.push(offset);
-                    slice.push(offset + 1);
-                    slice.push(offset + 3);
-                    slice.push(offset);
-                    slice.push(offset + 3);
-                    slice.push(offset + 2);
+                    if *tile > 0 {
+                        let tile = tile - 1;
+                        let row_num = tile / num_tiles_x;
+                        let col_num = tile - num_tiles_x * row_num;
+                        let u = col_num as f32 * tile_tex_width;
+                        let v = row_num as f32 * tile_tex_height;
+                        mesh.push(Vertex { pos: [x, y], color: [1.0, 1.0, 1.0], uv: [u, v + tile_tex_height] });
+                        mesh.push(Vertex { pos: [x + tile_world_size, y], color: [1.0, 1.0, 1.0], uv: [u + tile_tex_width, v + tile_tex_height] });
+                        mesh.push(Vertex { pos: [x, y + tile_world_size], color: [1.0, 1.0, 1.0], uv: [u, v] });
+                        mesh.push(Vertex { pos: [x + tile_world_size, y + tile_world_size], color: [1.0, 1.0, 1.0], uv: [u + tile_tex_width, v] });
+                        slice.push(offset);
+                        slice.push(offset + 1);
+                        slice.push(offset + 3);
+                        slice.push(offset);
+                        slice.push(offset + 3);
+                        slice.push(offset + 2);
+                        offset += 4;
+                    }
                     x += tile_world_size;
-                    offset += 4;
                 }
                 y += tile_world_size;
             }
