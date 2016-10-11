@@ -4,10 +4,12 @@ extern crate gfx;
 extern crate gfx_window_glutin;
 extern crate glutin;
 extern crate image;
+extern crate tiled;
 extern crate time;
 
 pub mod input;
 pub mod sprite;
+pub mod tilemap;
 pub mod types;
 pub mod player;
 
@@ -39,12 +41,18 @@ pub fn main() {
     let mut view: UniformMat4 = cgmath::Matrix4::identity().into();
 
     let sprite_factory = sprite::SpriteFactory::new(&mut factory);
+
     let texture = sprite::load_texture(&mut factory, std::path::Path::new("assets/textures/tankBlue_outline.png")).unwrap();
     let barrel_texture = sprite::load_texture(&mut factory, std::path::Path::new("assets/textures/barrelBlue_outline.png")).unwrap();
+    let tileset = sprite::load_texture(&mut factory, std::path::Path::new("assets/textures/mapPack_tilesheet.png")).unwrap();
+    let tilemap = tilemap::load_tilemap(std::path::Path::new("assets/maps/test.tmx")).unwrap();
+
     let sprite = sprite_factory.create(&mut factory, main_color.clone(), texture.clone(), 32.0, 32.0);
     let barrel = sprite_factory.create(&mut factory, main_color.clone(), barrel_texture.clone(), 12.0, 27.0);
 
     let mut player = player::Player::new(sprite, barrel);
+    let tilemap = tilemap::Tilemap::new(&mut factory, tilemap, tileset);
+    let layers = tilemap.create_layers(&mut factory, main_color.clone());
 
     let mut input = input::Input::new();
 
@@ -81,6 +89,11 @@ pub fn main() {
         }
 
         encoder.clear(&main_color, BG_COLOR);
+
+        for layer in layers.iter() {
+            layer.render(&mut encoder, proj, view);
+        }
+
         player.render(&mut encoder, proj, view);
         encoder.flush(&mut device);
         window.swap_buffers().unwrap();
