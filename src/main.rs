@@ -19,7 +19,7 @@ use cgmath::{Rotation3, SquareMatrix};
 use gfx::Device;
 
 const TICK_TIME: u64 = 20 * 1000000;
-const BG_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
+const BG_COLOR: [f32; 4] = [0.529, 0.808, 0.980, 1.0];
 
 const WINDOW_WIDTH: u32 = 1280;
 const WINDOW_HEIGHT: u32 = 720;
@@ -47,8 +47,8 @@ pub fn main() {
     let tileset = sprite::load_texture(&mut factory, std::path::Path::new("assets/textures/mapPack_tilesheet.png")).unwrap();
     let tilemap = tilemap::load_tilemap(std::path::Path::new("assets/maps/test.tmx")).unwrap();
 
-    let sprite = sprite_factory.create(&mut factory, main_color.clone(), texture.clone(), 32.0, 32.0);
-    let barrel = sprite_factory.create(&mut factory, main_color.clone(), barrel_texture.clone(), 12.0, 27.0);
+    let sprite = sprite_factory.create(&mut factory, main_color.clone(), texture.clone(), 64.0, 64.0);
+    let barrel = sprite_factory.create(&mut factory, main_color.clone(), barrel_texture.clone(), 24.0, 52.0);
 
     let mut player = player::Player::new(sprite, barrel);
     let tilemap = tilemap::Tilemap::new(&mut factory, tilemap, tileset);
