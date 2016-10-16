@@ -1,8 +1,9 @@
 use std::path::Path;
 use std::fs::File;
 use std::io::BufReader;
+use std::rc::Rc;
 
-use cgmath::{self, Rotation, SquareMatrix};
+use cgmath::{self, SquareMatrix};
 use gfx;
 use gfx::traits::FactoryExt;
 use tiled;
@@ -42,13 +43,13 @@ pub fn load_tilemap<P>(path: P) -> Result<tiled::Map, String>
 
 pub struct Tilemap<R: gfx::Resources> {
     sampler: gfx::handle::Sampler<R>,
-    pso: gfx::PipelineState<R, pipe::Meta>,
+    pso: Rc<gfx::PipelineState<R, pipe::Meta>>,
     tilemap: tiled::Map,
     tileset: Texture<R>,
 }
 
-pub struct TilemapLayer<'a, R: gfx::Resources> {
-    pso: &'a gfx::PipelineState<R, pipe::Meta>,
+pub struct TilemapLayer<R: gfx::Resources> {
+    pso: Rc<gfx::PipelineState<R, pipe::Meta>>,
     data: pipe::Data<R>,
     slice: gfx::Slice<R>,
 }
@@ -59,10 +60,10 @@ impl<R> Tilemap<R>
         where F: gfx::Factory<R> {
         Tilemap {
             sampler: factory.create_sampler_linear(),
-            pso: factory.create_pipeline_simple(
+            pso: Rc::new(factory.create_pipeline_simple(
                 include_bytes!("shader/sprite_150.glslv"),
                 include_bytes!("shader/sprite_150.glslf"),
-                pipe::new()).unwrap(),
+                pipe::new()).unwrap()),
             tilemap: tilemap,
             tileset: tileset,
         }
@@ -81,12 +82,9 @@ impl<R> Tilemap<R>
             let mut y = 0.0;
             let mut offset: u16 = 0;
             let num_tiles_x: u32 = 16;
-            let num_tiles_y: u32 = 12;
             let tile_world_size = 64.0;
             let tile_tex_offset_x = 2.0 / 1088.0;
             let tile_tex_offset_y = 2.0 / 816.0;
-            // let tile_tex_width = 1.0 / num_tiles_x as f32 - 2.0 * tile_tex_offset_x;
-            // let tile_tex_height = 1.0 / num_tiles_y as f32 - 2.0 * tile_tex_offset_y;
             let tile_tex_width = 64.0 / 1088.0;
             let tile_tex_height = 64.0 / 816.0;
 
@@ -118,23 +116,23 @@ impl<R> Tilemap<R>
 
             let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(&mesh, slice.as_slice());
 
-            result.push(TilemapLayer::new(factory, &self.pso, vertex_buffer, slice, self.sampler.clone(), target.clone(), self.tileset.clone()));
+            result.push(TilemapLayer::new(factory, self.pso.clone(), vertex_buffer, slice, self.sampler.clone(), target.clone(), self.tileset.clone()));
         }
 
         result
     }
 }
 
-impl<'a, R> TilemapLayer<'a, R>
+impl<R> TilemapLayer<R>
     where R: gfx::Resources {
     fn new<F>(
         factory: &mut F,
-        pso: &'a gfx::PipelineState<R, pipe::Meta>,
+        pso: Rc<gfx::PipelineState<R, pipe::Meta>>,
         vbuf: gfx::handle::Buffer<R, Vertex>,
         slice: gfx::Slice<R>,
         sampler: gfx::handle::Sampler<R>,
         target: gfx::handle::RenderTargetView<R, ColorFormat>,
-        texture: Texture<R>) -> TilemapLayer<'a, R>
+        texture: Texture<R>) -> TilemapLayer<R>
         where F: gfx::Factory<R> {
         let data = pipe::Data {
             vbuf: vbuf,

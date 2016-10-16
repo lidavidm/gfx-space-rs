@@ -31,7 +31,7 @@ impl Input {
     pub fn key_pressed(&mut self,
                        state: glutin::ElementState,
                        code: glutin::ScanCode,
-                       vcode: Option<glutin::VirtualKeyCode>) {
+                       _vcode: Option<glutin::VirtualKeyCode>) {
         match code {
             25 => self.forward = state == glutin::ElementState::Pressed,
             39 => self.backward = state == glutin::ElementState::Pressed,

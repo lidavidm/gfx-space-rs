@@ -9,19 +9,19 @@ use input::Input;
 use sprite::Sprite;
 use types::*;
 
-pub struct Player<'a, R>
+pub struct Player<R>
     where R: gfx::Resources {
-    sprite: Sprite<'a, R>,
-    barrel: Sprite<'a, R>,
+    sprite: Sprite<R>,
+    barrel: Sprite<R>,
     acceleration: f32,
     velocity: f32,
     angular_velocity: f32,
     angle: f32,
 }
 
-impl<'a, R> Player<'a, R>
+impl<R> Player<R>
     where R: gfx::Resources {
-    pub fn new(mut sprite: Sprite<'a, R>, mut barrel: Sprite<'a, R>) -> Player<'a, R> {
+    pub fn new(mut sprite: Sprite<R>, mut barrel: Sprite<R>) -> Player<R> {
         barrel.position.x = sprite.width / 2.0 - barrel.width / 2.0;
         barrel.position.y = sprite.height / 2.0;
         barrel.rotation_center = cgmath::vec3(barrel.width / 2.0, 0.0, 0.0);

@@ -1,4 +1,6 @@
-use cgmath::{self, Rotation, SquareMatrix};
+use std::rc::Rc;
+
+use cgmath::{self, Rotation};
 use gfx;
 use gfx::traits::FactoryExt;
 
@@ -56,7 +58,7 @@ pub fn load_texture<F, R, P>(factory: &mut F, path: P)
 
 pub struct SpriteFactory<R: gfx::Resources> {
     sampler: gfx::handle::Sampler<R>,
-    pso: gfx::PipelineState<R, pipe::Meta>,
+    pso: Rc<gfx::PipelineState<R, pipe::Meta>>,
     vbuf: gfx::handle::Buffer<R, Vertex>,
     slice: gfx::Slice<R>,
 }
@@ -69,10 +71,10 @@ impl<R> SpriteFactory<R>
             &TRIANGLE, &TRIANGLE_INDICES as &[u16]);
         SpriteFactory {
             sampler: factory.create_sampler_linear(),
-            pso: factory.create_pipeline_simple(
+            pso: Rc::new(factory.create_pipeline_simple(
                 include_bytes!("shader/sprite_150.glslv"),
                 include_bytes!("shader/sprite_150.glslf"),
-                pipe::new()).unwrap(),
+                pipe::new()).unwrap()),
             vbuf: vertex_buffer,
             slice: slice,
         }
@@ -86,15 +88,15 @@ impl<R> SpriteFactory<R>
         width: f32, height: f32) -> Sprite<R>
         where F: gfx::Factory<R> {
         Sprite::new(
-            factory, &self.pso,
+            factory, self.pso.clone(),
             self.vbuf.clone(), self.slice.clone(),
             self.sampler.clone(), target, texture,
             width, height)
     }
 }
 
-pub struct Sprite<'a, R: gfx::Resources> {
-    pso: &'a gfx::PipelineState<R, pipe::Meta>,
+pub struct Sprite<R: gfx::Resources> {
+    pso: Rc<gfx::PipelineState<R, pipe::Meta>>,
     data: pipe::Data<R>,
     slice: gfx::Slice<R>,
     pub position: cgmath::Vector3<f32>,
@@ -105,17 +107,17 @@ pub struct Sprite<'a, R: gfx::Resources> {
     pub height: f32,
 }
 
-impl<'a, R: gfx::Resources> Sprite<'a, R> {
+impl<R: gfx::Resources> Sprite<R> {
     pub fn new<F>(
         factory: &mut F,
-        pso: &'a gfx::PipelineState<R, pipe::Meta>,
+        pso: Rc<gfx::PipelineState<R, pipe::Meta>>,
         vbuf: gfx::handle::Buffer<R, Vertex>,
         slice: gfx::Slice<R>,
         sampler: gfx::handle::Sampler<R>,
         target: gfx::handle::RenderTargetView<R, ColorFormat>,
         texture: Texture<R>,
         width: f32,
-        height: f32) -> Sprite<'a, R>
+        height: f32) -> Sprite<R>
         where F: gfx::Factory<R> {
         let data = pipe::Data {
             vbuf: vbuf,
