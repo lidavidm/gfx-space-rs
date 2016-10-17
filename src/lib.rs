@@ -14,3 +14,4 @@ pub mod sprite;
 pub mod tilemap;
 pub mod types;
 pub mod player;
+pub mod rectangle;
