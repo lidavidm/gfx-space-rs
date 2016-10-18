@@ -21,9 +21,13 @@ const WINDOW_HEIGHT: u32 = 640;
 
 const WORLD_WIDTH: f32 = 480.0;
 const WORLD_HEIGHT: f32 = 320.0;
+
 const PADDLE_VELOCITY: f32 = 2.0;
 const PADDLE_WIDTH: f32 = 64.0;
 const PADDLE_HEIGHT: f32 = 16.0;
+
+const BLOCK_WIDTH: f32 = 32.0;
+const BLOCK_HEIGHT: f32 = 16.0;
 
 type R = gfx_device_gl::Resources;
 
@@ -56,6 +60,7 @@ struct Game {
     proj: UniformMat4,
     view: UniformMat4,
     paddle: Paddle,
+    blocks: Vec<Rectangle<R>>,
     input: Input,
 }
 
@@ -71,10 +76,28 @@ impl mgmm::game::Game for Game {
             PADDLE_WIDTH, PADDLE_HEIGHT
         );
 
+        let mut blocks = vec![];
+        for y in 0..6 {
+            let top = if y % 2 == 0 { 8 } else { 7 };
+            let left = (WORLD_WIDTH - (top as f32) * (BLOCK_WIDTH + 4.0) + 4.0) / 2.0;
+            for x in 0..top {
+                let mut block = Rectangle::new(
+                    factory,
+                    main_color.clone(),
+                    [0.0, 0.0, 1.0],
+                    BLOCK_WIDTH, BLOCK_HEIGHT
+                );
+                block.position.y = WORLD_HEIGHT - (y as f32) * (BLOCK_HEIGHT + 4.0);
+                block.position.x = left + (BLOCK_WIDTH + 4.0) * (x as f32);
+                blocks.push(block);
+            }
+        }
+
         Game {
             proj: proj,
             view: view,
             paddle: Paddle::new(rectangle),
+            blocks: blocks,
             input: Input { left: false, right: false },
         }
     }
@@ -104,6 +127,9 @@ impl mgmm::game::Game for Game {
     fn render(&mut self, encoder: &mut GLEncoder, target: &RenderTarget) {
         encoder.clear(target, BG_COLOR);
         self.paddle.render(encoder, self.proj, self.view);
+        for block in self.blocks.iter_mut() {
+            block.render(encoder, self.proj, self.view);
+        }
     }
 }
 
