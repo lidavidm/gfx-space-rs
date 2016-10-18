@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use cgmath::{self, Rotation};
 use gfx;
 use gfx::traits::FactoryExt;
