@@ -15,3 +15,4 @@ pub mod tilemap;
 pub mod types;
 pub mod player;
 pub mod rectangle;
+pub mod circle;
