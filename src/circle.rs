@@ -50,6 +50,8 @@ impl<R: gfx::Resources> Circle<R> {
         ];
         let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(
             &vertices, &indices as &[u16]);
+        // Shaders based on
+        // http://www.desultoryquest.com/blog/drawing-anti-aliased-circular-points-using-opengl-slash-webgl/
         let shader_set = factory.create_shader_set(
             include_bytes!("shader/circle_150.glslv"),
             include_bytes!("shader/circle_150.glslf")).unwrap();
