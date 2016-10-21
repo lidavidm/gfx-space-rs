@@ -10,6 +10,7 @@ extern crate time;
 extern crate mgmm;
 
 use mgmm::rectangle::Rectangle;
+use mgmm::circle::Circle;
 use mgmm::types::*;
 
 use cgmath::{SquareMatrix};
@@ -61,6 +62,7 @@ struct Game {
     view: UniformMat4,
     paddle: Paddle,
     blocks: Vec<Rectangle<R>>,
+    ball: Circle<R>,
     input: Input,
 }
 
@@ -75,6 +77,14 @@ impl mgmm::game::Game for Game {
             [1.0, 0.0, 0.0],
             PADDLE_WIDTH, PADDLE_HEIGHT
         );
+        let mut ball = Circle::new(
+            factory,
+            main_color.clone(),
+            [1.0, 0.0, 1.0],
+            32.0, 32.0
+        );
+        ball.position.x = 0.0;
+        ball.position.y = 0.0;
 
         let mut blocks = vec![];
         for y in 0..6 {
@@ -98,6 +108,7 @@ impl mgmm::game::Game for Game {
             view: view,
             paddle: Paddle::new(rectangle),
             blocks: blocks,
+            ball: ball,
             input: Input { left: false, right: false },
         }
     }

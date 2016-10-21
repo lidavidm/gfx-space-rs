@@ -4,6 +4,8 @@ use gfx::traits::FactoryExt;
 
 pub use types::*;
 
+// TODO: make a_Color a uniform instead?
+
 gfx_defines! {
     vertex Vertex {
         pos: [f32; 2] = "a_Pos",

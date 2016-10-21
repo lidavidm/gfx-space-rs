@@ -35,12 +35,14 @@ impl mgmm::game::Game for Game {
         let proj: UniformMat4 = cgmath::ortho(0.0, WORLD_WIDTH, 0.0, WORLD_HEIGHT, 0.0, 1.0).into();
         let view: UniformMat4 = cgmath::Matrix4::identity().into();
 
-        let circle = Circle::new(
+        let mut circle = Circle::new(
             factory,
             main_color.clone(),
             [1.0, 0.0, 1.0],
             32.0, 32.0
         );
+        circle.position.x = 64.0;
+        circle.position.y = 64.0;
 
         Game {
             proj: proj,

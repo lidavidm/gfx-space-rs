@@ -9,9 +9,11 @@ uniform Locals {
   mat4 u_View;
   mat4 u_Model;
   vec3 u_Color;
+  float u_PointSize;
 };
 
 void main() {
   v_Color = u_Color;
   gl_Position = u_Proj * u_View * u_Model * vec4(a_Pos, 0.0, 1.0);
+  gl_PointSize = u_PointSize;
 }

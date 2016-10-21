@@ -29,7 +29,6 @@ pub struct Circle<R: gfx::Resources> {
     data: pipe::Data<R>,
     slice: gfx::Slice<R>,
     pub position: cgmath::Vector3<f32>,
-    pub scale: f32,
     pub width: f32,
     pub height: f32,
     pub color: [f32; 3],
@@ -71,7 +70,6 @@ impl<R: gfx::Resources> Circle<R> {
             data: data,
             slice: slice,
             position: cgmath::vec3(0.0, 0.0, 0.0),
-            scale: 1.0,
             width: width,
             height: height,
             color: color,
@@ -84,10 +82,9 @@ impl<R: gfx::Resources> Circle<R> {
                  view: UniformMat4)
         where C: gfx::CommandBuffer<R> {
         // TODO: cache recomputation of model matrix where possible
-        let scale = cgmath::Matrix4::from_nonuniform_scale(self.scale * self.width, self.scale * self.height, 1.0);
         let translate_to_position = cgmath::Matrix4::from_translation(self.position);
 
-        let model = translate_to_position * scale;
+        let model = translate_to_position;
 
         let locals = Locals {
             proj: proj,
