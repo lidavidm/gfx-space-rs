@@ -81,7 +81,7 @@ impl<R: gfx::Resources> Circle<R> {
                  view: UniformMat4)
         where C: gfx::CommandBuffer<R> {
         // TODO: cache recomputation of model matrix where possible
-        let translate_to_position = cgmath::Matrix4::from_translation(self.position + cgmath::vec3(self.r, self.r / 2.0, 0.0));
+        let translate_to_position = cgmath::Matrix4::from_translation(self.position + cgmath::vec3(self.r, self.r, 0.0));
 
         let model = translate_to_position;
 
