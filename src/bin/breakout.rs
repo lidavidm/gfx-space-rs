@@ -30,6 +30,8 @@ const PADDLE_HEIGHT: f32 = 16.0;
 const BLOCK_WIDTH: f32 = 32.0;
 const BLOCK_HEIGHT: f32 = 16.0;
 
+const BALL_RADIUS: f32 = 8.0;
+
 type R = gfx_device_gl::Resources;
 
 struct Paddle {
@@ -81,10 +83,10 @@ impl mgmm::game::Game for Game {
             factory,
             main_color.clone(),
             [1.0, 0.0, 1.0],
-            32.0, 32.0
+            BALL_RADIUS,
         );
-        ball.position.x = 0.0;
-        ball.position.y = 0.0;
+        ball.position.x = PADDLE_WIDTH / 2.0 - BALL_RADIUS;
+        ball.position.y = PADDLE_HEIGHT;
 
         let mut blocks = vec![];
         for y in 0..6 {
@@ -138,6 +140,7 @@ impl mgmm::game::Game for Game {
     fn render(&mut self, encoder: &mut GLEncoder, target: &RenderTarget) {
         encoder.clear(target, BG_COLOR);
         self.paddle.render(encoder, self.proj, self.view);
+        self.ball.render(encoder, self.proj, self.view);
         for block in self.blocks.iter_mut() {
             block.render(encoder, self.proj, self.view);
         }

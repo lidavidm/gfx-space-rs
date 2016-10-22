@@ -1,4 +1,4 @@
-use cgmath::{self, Rotation};
+use cgmath;
 use gfx;
 use gfx::traits::FactoryExt;
 
@@ -29,8 +29,7 @@ pub struct Circle<R: gfx::Resources> {
     data: pipe::Data<R>,
     slice: gfx::Slice<R>,
     pub position: cgmath::Vector3<f32>,
-    pub width: f32,
-    pub height: f32,
+    pub r: f32,
     pub color: [f32; 3],
 }
 
@@ -39,8 +38,7 @@ impl<R: gfx::Resources> Circle<R> {
         factory: &mut F,
         target: gfx::handle::RenderTargetView<R, ColorFormat>,
         color: [f32; 3],
-        width: f32,
-        height: f32) -> Circle<R>
+        r: f32) -> Circle<R>
         where F: gfx::Factory<R> {
         let vertices = [
             Vertex { pos: [0.0, 0.0] },
@@ -72,8 +70,7 @@ impl<R: gfx::Resources> Circle<R> {
             data: data,
             slice: slice,
             position: cgmath::vec3(0.0, 0.0, 0.0),
-            width: width,
-            height: height,
+            r: r,
             color: color,
         }
     }
@@ -84,7 +81,7 @@ impl<R: gfx::Resources> Circle<R> {
                  view: UniformMat4)
         where C: gfx::CommandBuffer<R> {
         // TODO: cache recomputation of model matrix where possible
-        let translate_to_position = cgmath::Matrix4::from_translation(self.position);
+        let translate_to_position = cgmath::Matrix4::from_translation(self.position + cgmath::vec3(self.r, self.r / 2.0, 0.0));
 
         let model = translate_to_position;
 
@@ -93,7 +90,7 @@ impl<R: gfx::Resources> Circle<R> {
             view: view,
             model: model.into(),
             color: self.color,
-            point_size: 50.0,
+            point_size: 4.0 * self.r,
         };
 
         encoder.update_buffer(&self.data.locals, &[locals], 0).unwrap();
