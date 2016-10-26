@@ -15,6 +15,8 @@ use mgmm::types::*;
 
 use cgmath::{SquareMatrix};
 
+const PI: f32 = std::f32::consts::PI;
+
 const BG_COLOR: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
 
 const WINDOW_WIDTH: u32 = 960;
@@ -57,6 +59,7 @@ impl Paddle {
 struct Input {
     left: bool,
     right: bool,
+    launch: bool,
 }
 
 struct Game {
@@ -65,6 +68,8 @@ struct Game {
     paddle: Paddle,
     blocks: Vec<Rectangle<R>>,
     ball: Circle<R>,
+    ball_speed: f32,
+    ball_angle: f32,
     input: Input,
 }
 
@@ -111,16 +116,140 @@ impl mgmm::game::Game for Game {
             paddle: Paddle::new(rectangle),
             blocks: blocks,
             ball: ball,
-            input: Input { left: false, right: false },
+            ball_speed: 0.0,
+            ball_angle: 0.0,
+            input: Input { left: false, right: false, launch: false, },
         }
     }
 
     fn tick(&mut self) {
-        if self.input.left && self.paddle.rect.position.x > 0.0 {
-            self.paddle.rect.position.x -= PADDLE_VELOCITY;
+        let delta_paddle = if self.input.left && self.paddle.rect.position.x > 0.0 {
+            -PADDLE_VELOCITY
         }
-        if self.input.right && self.paddle.rect.position.x + PADDLE_WIDTH < WORLD_WIDTH {
-            self.paddle.rect.position.x += PADDLE_VELOCITY;
+        else if self.input.right && self.paddle.rect.position.x + PADDLE_WIDTH < WORLD_WIDTH {
+            PADDLE_VELOCITY
+        }
+        else {
+            0.0
+        };
+        self.paddle.rect.position.x += delta_paddle;
+
+        // Ball is "sticky" when on the paddle
+        if self.ball.position.y <= PADDLE_HEIGHT + 2.0 {
+            self.ball.position.x += delta_paddle;
+        }
+
+        if self.input.launch {
+            self.ball_angle = if delta_paddle == 0.0 {
+                std::f32::consts::PI / 2.0
+            } else if delta_paddle > 0.0 {
+                std::f32::consts::PI / 4.0
+            } else {
+                -std::f32::consts::PI / 4.0
+            };
+            self.ball_speed = 2.0;
+        }
+
+        let ball_dx = self.ball_speed * f32::cos(self.ball_angle);
+        let ball_dy = self.ball_speed * f32::sin(self.ball_angle);
+
+        // Figure out where the ball will be
+        let new_x = self.ball.position.x + ball_dx;
+        let new_y = self.ball.position.y + ball_dy;
+
+        // Check collisions with bricks
+        // TODO: refactor into a collision handler
+        let mut top = false;
+        let mut bottom = false;
+        let mut left = false;
+        let mut right = false;
+        for block in self.blocks.iter() {
+            // Get the closest point on the rectangle to the circle's center
+            let closest_x = f32::max(block.position.x, f32::min(new_x, block.position.x + block.width));
+            let closest_y = f32::max(block.position.y, f32::min(new_y, block.position.y + block.height));
+
+            // Check whether the distance is less than the radius
+            let d2 = (closest_x - new_x).powi(2) + (closest_y - new_y).powi(2);
+
+            if d2 < self.ball.r.powi(2) {
+                // self.ball_speed = 0.0;
+                if closest_y >= block.position.y + block.height {
+                    bottom = true;
+                }
+                else if closest_y <= block.position.y {
+                    top = true;
+                }
+
+                if closest_x <= block.position.x {
+                    right = true;
+                }
+                else if closest_x >= block.position.x + block.width {
+                    left = true;
+                }
+            }
+        }
+
+        // Check collisions with walls
+        if new_x + self.ball.r >= WORLD_WIDTH {
+            right = true;
+        }
+        if new_x - self.ball.r <= 0.0 {
+            left = true;
+        }
+        if new_y + self.ball.r >= WORLD_HEIGHT {
+            top = true;
+        }
+
+        // Check collisions with floor
+
+        // TODO: each bounce should also increase speed
+        if top || bottom || left || right {
+            if top && bottom {
+                self.ball_angle = if self.ball_angle <= PI / 2.0 || self.ball_angle >= 1.5 * PI {
+                    0.0
+                } else {
+                    PI
+                }
+            }
+            else if top && self.ball_angle < PI {
+                self.ball_angle = PI + (PI - self.ball_angle);
+            }
+            else if bottom && self.ball_angle > PI {
+                self.ball_angle = PI - (self.ball_angle - PI);
+            }
+
+            if left && right {
+                self.ball_angle = if self.ball_angle >= 0.0 && self.ball_angle <= PI {
+                    PI / 2.0
+                } else {
+                    3.0 * PI / 2.0
+                }
+            }
+            else if left && self.ball_angle > PI / 2.0 && self.ball_angle < 1.5 * PI {
+                self.ball_angle = if self.ball_angle <= PI {
+                    self.ball_angle - PI / 2.0
+                } else {
+                    self.ball_angle - PI
+                };
+            }
+            else if right && (self.ball_angle < PI / 2.0 || self.ball_angle > 1.5 * PI) {
+                self.ball_angle = if self.ball_angle < PI / 2.0 {
+                    self.ball_angle + PI / 2.0
+                } else {
+                    self.ball_angle - PI / 2.0
+                };
+            }
+
+            let ball_dx = self.ball_speed * f32::cos(self.ball_angle);
+            let ball_dy = self.ball_speed * f32::sin(self.ball_angle);
+            let new_x = self.ball.position.x + ball_dx;
+            let new_y = self.ball.position.y + ball_dy;
+            self.ball.position.x = new_x;
+            self.ball.position.y = new_y;
+        }
+        else {
+            self.ball.position.x = new_x;
+            self.ball.position.y = new_y;
         }
     }
 
@@ -130,7 +259,8 @@ impl mgmm::game::Game for Game {
                 match code {
                     38 => self.input.left = state == glutin::ElementState::Pressed,
                     40 => self.input.right = state == glutin::ElementState::Pressed,
-                    _ => {}
+                    65 => self.input.launch = state == glutin::ElementState::Pressed,
+                    _ => {},
                 }
             }
             _ => {}
