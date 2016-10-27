@@ -62,6 +62,54 @@ struct Input {
     launch: bool,
 }
 
+struct CollisionDirection {
+    top: bool,
+    bottom: bool,
+    left: bool,
+    right: bool,
+}
+
+impl CollisionDirection {
+    fn check_multiple(new_x: f32, new_y: f32, r: f32, rects: &[Rectangle<R>]) -> CollisionDirection {
+        let mut top = false;
+        let mut bottom = false;
+        let mut left = false;
+        let mut right = false;
+
+        for rect in rects {
+            // Get the closest point on the rectangle to the circle's center
+            let closest_x = f32::max(rect.position.x, f32::min(new_x, rect.position.x + rect.width));
+            let closest_y = f32::max(rect.position.y, f32::min(new_y, rect.position.y + rect.height));
+
+            // Check whether the distance is less than the radius
+            let d2 = (closest_x - new_x).powi(2) + (closest_y - new_y).powi(2);
+
+            if d2 < r.powi(2) {
+                if closest_y >= rect.position.y + rect.height {
+                    bottom = true;
+                }
+                else if closest_y <= rect.position.y {
+                    top = true;
+                }
+
+                if closest_x <= rect.position.x {
+                    right = true;
+                }
+                else if closest_x >= rect.position.x + rect.width {
+                    left = true;
+                }
+            }
+        }
+
+        CollisionDirection {
+            top: top,
+            bottom: bottom,
+            left: left,
+            right: right,
+        }
+    }
+}
+
 struct Game {
     proj: UniformMat4,
     view: UniformMat4,
@@ -158,80 +206,51 @@ impl mgmm::game::Game for Game {
         let new_y = self.ball.position.y + ball_dy;
 
         // Check collisions with bricks
-        // TODO: refactor into a collision handler
-        let mut top = false;
-        let mut bottom = false;
-        let mut left = false;
-        let mut right = false;
-        for block in self.blocks.iter() {
-            // Get the closest point on the rectangle to the circle's center
-            let closest_x = f32::max(block.position.x, f32::min(new_x, block.position.x + block.width));
-            let closest_y = f32::max(block.position.y, f32::min(new_y, block.position.y + block.height));
-
-            // Check whether the distance is less than the radius
-            let d2 = (closest_x - new_x).powi(2) + (closest_y - new_y).powi(2);
-
-            if d2 < self.ball.r.powi(2) {
-                // self.ball_speed = 0.0;
-                if closest_y >= block.position.y + block.height {
-                    bottom = true;
-                }
-                else if closest_y <= block.position.y {
-                    top = true;
-                }
-
-                if closest_x <= block.position.x {
-                    right = true;
-                }
-                else if closest_x >= block.position.x + block.width {
-                    left = true;
-                }
-            }
-        }
+        let mut collisions = CollisionDirection::check_multiple(new_x, new_y, self.ball.r, &self.blocks);
 
         // Check collisions with walls
         if new_x + self.ball.r >= WORLD_WIDTH {
-            right = true;
+            collisions.right = true;
         }
         if new_x - self.ball.r <= 0.0 {
-            left = true;
+            collisions.left = true;
         }
         if new_y + self.ball.r >= WORLD_HEIGHT {
-            top = true;
+            collisions.top = true;
         }
 
         // Check collisions with floor
 
-        if top || bottom || left || right {
-            if top && bottom {
+        if collisions.top || collisions.bottom || collisions.left || collisions.right {
+            if collisions.top && collisions.bottom {
                 self.ball_angle = if self.ball_angle <= PI / 2.0 || self.ball_angle >= 1.5 * PI {
                     0.0
                 } else {
                     PI
                 }
             }
-            else if top && self.ball_angle < PI {
+            else if collisions.top && self.ball_angle < PI {
                 self.ball_angle = PI + (PI - self.ball_angle);
             }
-            else if bottom && self.ball_angle > PI {
+            else if collisions.bottom && self.ball_angle > PI {
                 self.ball_angle = PI - (self.ball_angle - PI);
             }
 
-            if left && right {
+            if collisions.left && collisions.right {
                 self.ball_angle = if self.ball_angle >= 0.0 && self.ball_angle <= PI {
                     PI / 2.0
                 } else {
                     3.0 * PI / 2.0
                 }
             }
-            else if left && self.ball_angle > PI / 2.0 && self.ball_angle < 1.5 * PI {
+            else if collisions.left && self.ball_angle > PI / 2.0 && self.ball_angle < 1.5 * PI {
                 self.ball_angle = if self.ball_angle <= PI {
                     self.ball_angle - PI / 2.0
                 } else {
                     self.ball_angle - PI
                 };
             }
-            else if right && (self.ball_angle < PI / 2.0 || self.ball_angle > 1.5 * PI) {
+            else if collisions.right && (self.ball_angle < PI / 2.0 || self.ball_angle > 1.5 * PI) {
                 self.ball_angle = if self.ball_angle < PI / 2.0 {
                     self.ball_angle + PI / 2.0
                 } else {
