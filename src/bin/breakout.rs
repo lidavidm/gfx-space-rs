@@ -70,13 +70,13 @@ struct CollisionDirection {
 }
 
 impl CollisionDirection {
-    fn check_multiple(new_x: f32, new_y: f32, r: f32, rects: &[Rectangle<R>]) -> CollisionDirection {
+    fn check_multiple(new_x: f32, new_y: f32, r: f32, rects: &mut Vec<Rectangle<R>>) -> CollisionDirection {
         let mut top = false;
         let mut bottom = false;
         let mut left = false;
         let mut right = false;
 
-        for rect in rects {
+        rects.retain(|ref rect| {
             // Get the closest point on the rectangle to the circle's center
             let closest_x = f32::max(rect.position.x, f32::min(new_x, rect.position.x + rect.width));
             let closest_y = f32::max(rect.position.y, f32::min(new_y, rect.position.y + rect.height));
@@ -98,8 +98,13 @@ impl CollisionDirection {
                 else if closest_x >= rect.position.x + rect.width {
                     left = true;
                 }
+
+                false
             }
-        }
+            else {
+                true
+            }
+        });
 
         CollisionDirection {
             top: top,
@@ -206,7 +211,7 @@ impl mgmm::game::Game for Game {
         let new_y = self.ball.position.y + ball_dy;
 
         // Check collisions with bricks
-        let mut collisions = CollisionDirection::check_multiple(new_x, new_y, self.ball.r, &self.blocks);
+        let mut collisions = CollisionDirection::check_multiple(new_x, new_y, self.ball.r, &mut self.blocks);
 
         // Check collisions with walls
         if new_x + self.ball.r >= WORLD_WIDTH {
