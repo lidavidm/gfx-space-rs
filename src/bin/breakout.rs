@@ -69,6 +69,28 @@ struct CollisionDirection {
     right: bool,
 }
 
+enum CollisionLocation {
+    Hit(f32, f32),
+    Miss,
+}
+
+impl CollisionLocation {
+    fn check(new_x: f32, new_y: f32, r: f32, rect: &Rectangle<R>) -> CollisionLocation {
+        let closest_x = f32::max(rect.position.x, f32::min(new_x, rect.position.x + rect.width));
+        let closest_y = f32::max(rect.position.y, f32::min(new_y, rect.position.y + rect.height));
+
+        // Check whether the distance is less than the radius
+        let d2 = (closest_x - new_x).powi(2) + (closest_y - new_y).powi(2);
+
+        if d2 < r.powi(2) {
+            CollisionLocation::Hit(closest_x, closest_y)
+        }
+        else {
+            CollisionLocation::Miss
+        }
+    }
+}
+
 impl CollisionDirection {
     fn check_multiple(new_x: f32, new_y: f32, r: f32, rects: &mut Vec<Rectangle<R>>) -> CollisionDirection {
         let mut top = false;
@@ -77,32 +99,24 @@ impl CollisionDirection {
         let mut right = false;
 
         rects.retain(|ref rect| {
-            // Get the closest point on the rectangle to the circle's center
-            let closest_x = f32::max(rect.position.x, f32::min(new_x, rect.position.x + rect.width));
-            let closest_y = f32::max(rect.position.y, f32::min(new_y, rect.position.y + rect.height));
+            match CollisionLocation::check(new_x, new_y, r, &rect) {
+                CollisionLocation::Hit(closest_x, closest_y) => {
+                    if closest_y >= rect.position.y + rect.height {
+                        bottom = true;
+                    }
+                    else if closest_y <= rect.position.y {
+                        top = true;
+                    }
 
-            // Check whether the distance is less than the radius
-            let d2 = (closest_x - new_x).powi(2) + (closest_y - new_y).powi(2);
-
-            if d2 < r.powi(2) {
-                if closest_y >= rect.position.y + rect.height {
-                    bottom = true;
-                }
-                else if closest_y <= rect.position.y {
-                    top = true;
-                }
-
-                if closest_x <= rect.position.x {
-                    right = true;
-                }
-                else if closest_x >= rect.position.x + rect.width {
-                    left = true;
-                }
-
-                false
-            }
-            else {
-                true
+                    if closest_x <= rect.position.x {
+                        right = true;
+                    }
+                    else if closest_x >= rect.position.x + rect.width {
+                        left = true;
+                    }
+                    false
+                },
+                CollisionLocation::Miss => true,
             }
         });
 
@@ -233,6 +247,20 @@ impl mgmm::game::Game for Game {
         }
 
         // Check collisions with paddle
+        match CollisionLocation::check(new_x, new_y, self.ball.r, &self.paddle.rect) {
+            CollisionLocation::Hit(closest_x, closest_y) => {
+                if self.ball_angle < PI {
+
+                }
+                else if self.ball_angle < 1.5 * PI {
+                    self.ball_angle -= 0.5 * PI;
+                }
+                else {
+                    self.ball_angle = PI - (self.ball_angle - PI);
+                }
+            },
+            CollisionLocation::Miss => {},
+        }
 
         if collisions.top || collisions.bottom || collisions.left || collisions.right {
             if collisions.top && collisions.bottom {
