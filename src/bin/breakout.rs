@@ -145,7 +145,7 @@ impl mgmm::game::Game for Game {
             } else if delta_paddle > 0.0 {
                 std::f32::consts::PI / 4.0
             } else {
-                -std::f32::consts::PI / 4.0
+                0.75 * std::f32::consts::PI
             };
             self.ball_speed = 2.0;
         }
