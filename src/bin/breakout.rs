@@ -202,7 +202,6 @@ impl mgmm::game::Game for Game {
 
         // Check collisions with floor
 
-        // TODO: each bounce should also increase speed
         if top || bottom || left || right {
             if top && bottom {
                 self.ball_angle = if self.ball_angle <= PI / 2.0 || self.ball_angle >= 1.5 * PI {
@@ -246,6 +245,9 @@ impl mgmm::game::Game for Game {
             let new_y = self.ball.position.y + ball_dy;
             self.ball.position.x = new_x;
             self.ball.position.y = new_y;
+
+            // Each bounce also increases speed
+            self.ball_speed += 0.5;
         }
         else {
             self.ball.position.x = new_x;
