@@ -220,6 +220,14 @@ impl mgmm::game::Game for Game {
         }
 
         // Check collisions with floor
+        if new_y <= 0.0 {
+            self.ball_speed = 0.0;
+            self.ball.position.x = self.paddle.rect.position.x + PADDLE_WIDTH / 2.0 - BALL_RADIUS;
+            self.ball.position.y = PADDLE_HEIGHT;
+            return;
+        }
+
+        // Check collisions with paddle
 
         if collisions.top || collisions.bottom || collisions.left || collisions.right {
             if collisions.top && collisions.bottom {
