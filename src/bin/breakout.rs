@@ -225,16 +225,20 @@ impl mgmm::game::Game for Game {
         let new_y = self.ball.position.y + ball_dy;
 
         // Check collisions with bricks
-        let mut collisions = CollisionDirection::check_multiple(new_x, new_y, self.ball.r, &mut self.blocks);
+        // Add the radius, because the origin of the ball's frame is
+        // the lower-left corner of its bounding box
+        let mut collisions = CollisionDirection::check_multiple(
+            new_x + self.ball.r, new_y + self.ball.r,
+            self.ball.r, &mut self.blocks);
 
         // Check collisions with walls
-        if new_x + self.ball.r >= WORLD_WIDTH {
+        if new_x + 2.0 * self.ball.r >= WORLD_WIDTH {
             collisions.right = true;
         }
-        if new_x - self.ball.r <= 0.0 {
+        if new_x <= 0.0 {
             collisions.left = true;
         }
-        if new_y + self.ball.r >= WORLD_HEIGHT {
+        if new_y + 2.0 * self.ball.r >= WORLD_HEIGHT {
             collisions.top = true;
         }
 
@@ -247,7 +251,7 @@ impl mgmm::game::Game for Game {
         }
 
         // Check collisions with paddle
-        match CollisionLocation::check(new_x, new_y, self.ball.r, &self.paddle.rect) {
+        match CollisionLocation::check(new_x + self.ball.r, new_y + self.ball.r, self.ball.r, &self.paddle.rect) {
             CollisionLocation::Hit(closest_x, closest_y) => {
                 if self.ball_angle < PI {
 
