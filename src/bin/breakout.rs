@@ -292,7 +292,7 @@ impl mgmm::game::Game for Game {
                 self.ball_angle = if self.ball_angle <= PI {
                     self.ball_angle - PI / 2.0
                 } else {
-                    self.ball_angle - PI
+                    self.ball_angle + PI / 2.0
                 };
             }
             else if collisions.right && (self.ball_angle < PI / 2.0 || self.ball_angle > 1.5 * PI) {
