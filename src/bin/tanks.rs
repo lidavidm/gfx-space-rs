@@ -7,15 +7,11 @@ extern crate glutin;
 extern crate image;
 extern crate tiled;
 extern crate time;
+extern crate mgmm;
 
-pub mod game;
-pub mod input;
-pub mod sprite;
-pub mod tilemap;
-pub mod types;
-pub mod player;
+use mgmm::{game, input, sprite, tilemap, types, player};
 
-use types::*;
+use mgmm::types::*;
 
 use cgmath::{SquareMatrix};
 
