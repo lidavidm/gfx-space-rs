@@ -25,7 +25,6 @@ const WINDOW_HEIGHT: u32 = 640;
 const WORLD_WIDTH: f32 = 480.0;
 const WORLD_HEIGHT: f32 = 320.0;
 
-const PADDLE_VELOCITY: f32 = 2.0;
 const PADDLE_WIDTH: f32 = 64.0;
 const PADDLE_HEIGHT: f32 = 16.0;
 
@@ -135,6 +134,7 @@ struct Game {
     paddle: Paddle,
     blocks: Vec<Rectangle<R>>,
     ball: Circle<R>,
+    paddle_speed: f32,
     ball_speed: f32,
     ball_angle: f32,
     input: Input,
@@ -183,6 +183,7 @@ impl mgmm::game::Game for Game {
             paddle: Paddle::new(rectangle),
             blocks: blocks,
             ball: ball,
+            paddle_speed: 0.0,
             ball_speed: 0.0,
             ball_angle: 0.0,
             input: Input { left: false, right: false, launch: false, },
@@ -190,11 +191,19 @@ impl mgmm::game::Game for Game {
     }
 
     fn tick(&mut self) {
+        if self.input.left || self.input.right {
+            self.paddle_speed = 3.0;
+        }
+
+        if !(self.input.left || self.input.right) {
+            self.paddle_speed = 0.0;
+        }
+
         let delta_paddle = if self.input.left && self.paddle.rect.position.x > 0.0 {
-            -PADDLE_VELOCITY
+            -self.paddle_speed
         }
         else if self.input.right && self.paddle.rect.position.x + PADDLE_WIDTH < WORLD_WIDTH {
-            PADDLE_VELOCITY
+            self.paddle_speed
         }
         else {
             0.0
@@ -214,7 +223,7 @@ impl mgmm::game::Game for Game {
             } else {
                 0.75 * std::f32::consts::PI
             };
-            self.ball_speed = 2.0;
+            self.ball_speed = 3.0;
         }
 
         let ball_dx = self.ball_speed * f32::cos(self.ball_angle);
@@ -311,7 +320,8 @@ impl mgmm::game::Game for Game {
             self.ball.position.y = new_y;
 
             // Each bounce also increases speed
-            self.ball_speed += 0.5;
+            self.ball_speed = f32::min(6.0, 1.25 * self.ball_speed);
+            self.paddle_speed = f32::min(6.0, 1.25 * self.paddle_speed);
         }
         else {
             self.ball.position.x = new_x;
