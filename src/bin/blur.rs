@@ -13,7 +13,7 @@ use cgmath::SquareMatrix;
 use gfx::Factory;
 
 use mgmm::circle::Circle;
-use mgmm::types::*;
+pub use mgmm::types::*;
 
 const BG_COLOR: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
 
@@ -24,6 +24,25 @@ const WORLD_WIDTH: f32 = 480.0;
 const WORLD_HEIGHT: f32 = 320.0;
 
 type R = gfx_device_gl::Resources;
+
+gfx_defines! {
+    vertex BlurVertex {
+        pos: [f32; 2] = "a_Pos",
+        uv: [f32; 2] = "a_Uv",
+    }
+
+    constant BlurLocals {
+        proj: UniformMat4 = "u_Proj",
+        model: UniformMat4 = "u_Model",
+    }
+
+    pipeline blur {
+        vbuf: gfx::VertexBuffer<BlurVertex> = (),
+        texture: gfx::TextureSampler<[f32; 4]> = "t_Texture",
+        locals: gfx::ConstantBuffer<BlurLocals> = "Locals",
+        out: gfx::BlendTarget<ColorFormat> = ("Target0", gfx::state::ColorMask::all(), gfx::preset::blend::ALPHA),
+    }
+}
 
 struct Game {
     proj: UniformMat4,
@@ -37,6 +56,7 @@ impl mgmm::game::Game for Game {
         let view: UniformMat4 = cgmath::Matrix4::identity().into();
 
         let (buf_width, buf_height, _, _) = main_color.get_dimensions();
+        // TODO: want a non-sRGB intermediate buffer
         let (_, srv, rtv) = factory.create_render_target::<ColorFormat>(buf_width, buf_height).unwrap();
 
         let circle = Circle::new(
