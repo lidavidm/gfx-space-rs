@@ -46,12 +46,12 @@ pub fn load_texture<F, R, P>(factory: &mut F, path: P)
     where F: gfx::Factory<R>,
           R: gfx::Resources,
           P: AsRef<::std::path::Path> {
-    use gfx::tex as t;
+    use gfx::texture as t;
 
     let img = ::image::open(path).unwrap().to_rgba();
     let (width, height) = img.dimensions();
     let kind = t::Kind::D2(width as u16, height as u16, t::AaMode::Single);
-    let (_texture, resource) = factory.create_texture_const_u8::<ColorFormat>(kind, &[&img]).unwrap();
+    let (_texture, resource) = factory.create_texture_immutable_u8::<ColorFormat>(kind, &[&img]).unwrap();
 
     Ok(resource)
 }

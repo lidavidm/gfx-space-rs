@@ -5,10 +5,10 @@ authors = ["David Li <li.davidm96@gmail.com>"]
 
 [dependencies]
 cgmath = "0.7"
-gfx = "0.12"
-gfx_window_glutin = "0.12"
+gfx = { git = "https://github.com/gfx-rs/gfx.git" }
+gfx_window_glutin = { git = "https://github.com/gfx-rs/gfx.git" }
+gfx_device_gl = { git = "https://github.com/gfx-rs/gfx.git" }
 glutin = "0.6"
-gfx_device_gl = "0.11"
 image = "0.10"
 tiled = "0.3"
 time = "0.1"
