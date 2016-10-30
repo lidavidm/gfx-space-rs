@@ -10,6 +10,7 @@ extern crate time;
 extern crate mgmm;
 
 use cgmath::SquareMatrix;
+use gfx::Bundle;
 use gfx::texture;
 use gfx::Factory;
 use gfx::traits::FactoryExt;
@@ -50,9 +51,7 @@ struct Game {
     view: UniformMat4,
     circle: Circle<R>,
 
-    pso: gfx::PipelineState<R, blur::Meta>,
-    data: blur::Data<R>,
-    slice: gfx::Slice<R>,
+    blur: Bundle<R, blur::Data<R>>,
     rtv: gfx::handle::RenderTargetView<R, ColorFormat>,
 }
 
@@ -73,10 +72,10 @@ impl mgmm::game::Game for Game {
         );
 
         let vertices = [
-            BlurVertex { pos: [0.0, 0.0], uv: [0.0, 1.0] },
-            BlurVertex { pos: [buf_width as f32, 0.0], uv: [1.0, 1.0] },
-            BlurVertex { pos: [0.0, buf_height as f32], uv: [0.0, 0.0] },
-            BlurVertex { pos: [buf_width as f32, buf_height as f32], uv: [1.0, 0.0] },
+            BlurVertex { pos: [0.0, 0.0], uv: [0.0, 0.0] },
+            BlurVertex { pos: [WORLD_WIDTH, 0.0], uv: [1.0, 0.0] },
+            BlurVertex { pos: [0.0, WORLD_HEIGHT], uv: [0.0, 1.0] },
+            BlurVertex { pos: [WORLD_WIDTH, WORLD_HEIGHT], uv: [1.0, 1.0] },
         ];
         let indices: [u16; 6] = [ 0, 1, 3, 0, 3, 2 ];
         let (vbuf, slice) = factory.create_vertex_buffer_with_slice(&vertices, &indices as &[u16]);
@@ -100,9 +99,7 @@ impl mgmm::game::Game for Game {
             view: view,
             circle: circle,
 
-            pso: pso,
-            data: data,
-            slice: slice,
+            blur: Bundle::new(slice, pso, data),
             rtv: rtv,
         }
     }
@@ -123,8 +120,8 @@ impl mgmm::game::Game for Game {
             proj: self.proj,
         };
 
-        encoder.update_buffer(&self.data.locals, &[locals], 0).unwrap();
-        encoder.draw(&self.slice, &self.pso, &self.data);
+        encoder.update_buffer(&self.blur.data.locals, &[locals], 0).unwrap();
+        self.blur.encode(encoder);
     }
 }
 
