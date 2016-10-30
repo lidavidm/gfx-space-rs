@@ -10,7 +10,9 @@ extern crate time;
 extern crate mgmm;
 
 use cgmath::SquareMatrix;
+use gfx::texture;
 use gfx::Factory;
+use gfx::traits::FactoryExt;
 
 use mgmm::circle::Circle;
 pub use mgmm::types::*;
@@ -33,7 +35,6 @@ gfx_defines! {
 
     constant BlurLocals {
         proj: UniformMat4 = "u_Proj",
-        model: UniformMat4 = "u_Model",
     }
 
     pipeline blur {
@@ -48,6 +49,11 @@ struct Game {
     proj: UniformMat4,
     view: UniformMat4,
     circle: Circle<R>,
+
+    pso: gfx::PipelineState<R, blur::Meta>,
+    data: blur::Data<R>,
+    slice: gfx::Slice<R>,
+    rtv: gfx::handle::RenderTargetView<R, ColorFormat>,
 }
 
 impl mgmm::game::Game for Game {
@@ -61,15 +67,43 @@ impl mgmm::game::Game for Game {
 
         let circle = Circle::new(
             factory,
-            main_color.clone(),
+            rtv.clone(),
             [1.0, 0.0, 0.0],
             10.0,
         );
+
+        let vertices = [
+            BlurVertex { pos: [0.0, 0.0], uv: [0.0, 1.0] },
+            BlurVertex { pos: [buf_width as f32, 0.0], uv: [1.0, 1.0] },
+            BlurVertex { pos: [0.0, buf_height as f32], uv: [0.0, 0.0] },
+            BlurVertex { pos: [buf_width as f32, buf_height as f32], uv: [1.0, 0.0] },
+        ];
+        let indices: [u16; 6] = [ 0, 1, 3, 0, 3, 2 ];
+        let (vbuf, slice) = factory.create_vertex_buffer_with_slice(&vertices, &indices as &[u16]);
+        let pso = factory.create_pipeline_simple(
+            include_bytes!("shader/blur_150.glslv"),
+            include_bytes!("shader/blur_150.glslf"),
+            blur::new()).unwrap();
+        let sampler = factory.create_sampler(
+            texture::SamplerInfo::new(texture::FilterMethod::Scale,
+                                      texture::WrapMode::Clamp)
+        );
+        let data = blur::Data {
+            vbuf: vbuf,
+            texture: (srv, sampler),
+            locals: factory.create_constant_buffer(1),
+            out: main_color.clone(),
+        };
 
         Game {
             proj: proj,
             view: view,
             circle: circle,
+
+            pso: pso,
+            data: data,
+            slice: slice,
+            rtv: rtv,
         }
     }
 
@@ -82,8 +116,15 @@ impl mgmm::game::Game for Game {
     }
 
     fn render(&mut self, encoder: &mut GLEncoder, target: &RenderTarget) {
+        encoder.clear(&self.rtv, [0.0, 0.0, 0.0, 0.0]);
         encoder.clear(target, BG_COLOR);
         self.circle.render(encoder, self.proj, self.view);
+        let locals = BlurLocals {
+            proj: self.proj,
+        };
+
+        encoder.update_buffer(&self.data.locals, &[locals], 0).unwrap();
+        encoder.draw(&self.slice, &self.pso, &self.data);
     }
 }
 
