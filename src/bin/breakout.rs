@@ -9,6 +9,7 @@ extern crate time;
 
 extern crate mgmm;
 
+use mgmm::blur::Blur;
 use mgmm::rectangle::Rectangle;
 use mgmm::circle::Circle;
 use mgmm::types::*;
@@ -131,6 +132,7 @@ impl CollisionDirection {
 struct Game {
     proj: UniformMat4,
     view: UniformMat4,
+    blur: Blur<R>,
     paddle: Paddle,
     blocks: Vec<Rectangle<R>>,
     ball: Circle<R>,
@@ -145,6 +147,8 @@ impl mgmm::game::Game for Game {
         let proj: UniformMat4 = cgmath::ortho(0.0, WORLD_WIDTH, 0.0, WORLD_HEIGHT, 0.0, 1.0).into();
         let view: UniformMat4 = cgmath::Matrix4::identity().into();
 
+        let blur = Blur::new(factory, main_color, WORLD_WIDTH, WORLD_HEIGHT);
+
         let rectangle = Rectangle::new(
             factory,
             main_color.clone(),
@@ -153,7 +157,7 @@ impl mgmm::game::Game for Game {
         );
         let mut ball = Circle::new(
             factory,
-            main_color.clone(),
+            blur.rtv.clone(),
             [1.0, 0.0, 1.0],
             BALL_RADIUS,
         );
@@ -180,6 +184,7 @@ impl mgmm::game::Game for Game {
         Game {
             proj: proj,
             view: view,
+            blur: blur,
             paddle: Paddle::new(rectangle),
             blocks: blocks,
             ball: ball,
@@ -345,8 +350,10 @@ impl mgmm::game::Game for Game {
 
     fn render(&mut self, encoder: &mut GLEncoder, target: &RenderTarget) {
         encoder.clear(target, BG_COLOR);
+        encoder.clear(&self.blur.rtv, [0.0, 0.0, 0.0, 0.0]);
         self.paddle.render(encoder, self.proj, self.view);
         self.ball.render(encoder, self.proj, self.view);
+        self.blur.render(encoder, self.proj, self.view);
         for block in self.blocks.iter_mut() {
             block.render(encoder, self.proj, self.view);
         }
