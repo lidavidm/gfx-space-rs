@@ -350,7 +350,7 @@ impl mgmm::game::Game for Game {
 
     fn render(&mut self, encoder: &mut GLEncoder, target: &RenderTarget) {
         encoder.clear(target, BG_COLOR);
-        encoder.clear(&self.blur.rtv, [0.0, 0.0, 0.0, 0.0]);
+        encoder.clear(&self.blur.rtv, [1.0, 1.0, 1.0, 0.0]);
         self.paddle.render(encoder, self.proj, self.view);
         self.ball.render(encoder, self.proj, self.view);
         self.blur.render(encoder, self.proj, self.view);
