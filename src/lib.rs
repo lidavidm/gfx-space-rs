@@ -8,6 +8,7 @@ extern crate image;
 extern crate tiled;
 extern crate time;
 
+pub mod blur;
 pub mod game;
 pub mod input;
 pub mod sprite;
