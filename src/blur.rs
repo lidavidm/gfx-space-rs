@@ -10,6 +10,7 @@ gfx_defines! {
 
     constant BlurLocals {
         proj: UniformMat4 = "u_Proj",
+        strength: f32 = "u_Strength",
     }
 
     pipeline blur {
@@ -22,6 +23,7 @@ gfx_defines! {
 
 pub struct Blur<R: gfx::Resources> {
     bundle: Bundle<R, blur::Data<R>>,
+    pub strength: f32,
     pub rtv: gfx::handle::RenderTargetView<R, ColorFormat>,
 }
 
@@ -57,6 +59,7 @@ impl<R: gfx::Resources> Blur<R> {
 
         Blur {
             bundle: bundle,
+            strength: 0.0,
             rtv: rtv,
         }
     }
@@ -68,6 +71,7 @@ impl<R: gfx::Resources> Blur<R> {
         where C: gfx::CommandBuffer<R> {
         let locals = BlurLocals {
             proj: proj,
+            strength: self.strength,
         };
 
         encoder.update_buffer(&self.bundle.data.locals, &[locals], 0).unwrap();

@@ -7,6 +7,7 @@ out vec2 v_Uv;
 
 uniform Locals {
   mat4 u_Proj;
+  float u_Strength;
 };
 
 void main() {

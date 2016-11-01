@@ -332,6 +332,8 @@ impl mgmm::game::Game for Game {
             self.ball.position.x = new_x;
             self.ball.position.y = new_y;
         }
+
+        self.blur.strength = self.ball_speed / 1200.0;
     }
 
     fn handle_event(&mut self, event: &glutin::Event) {
